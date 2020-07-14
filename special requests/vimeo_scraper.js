@@ -189,7 +189,7 @@ async function loopThroughVideoList(arr){
 
   var containArr = [];
   for(var i=0; i<arr.length; i++){
-    var link = getVODById(arr[i]);
+    var link = await getVODById(arr[i]);
     containArr.push(link);
     await delay(rando(1222)+1222);
   }
