@@ -1,6 +1,10 @@
 var rando = (n) => Math.round(Math.random() * n);
 var delay = (ms) => new Promise(res => setTimeout(res, ms));
 
+function parseSearchFacetValues(obj){
+  return obj?.facetHits;
+}
+
 var cleanObject = (ob) => 
   Object.entries(ob).reduce((r, [k, v]) => {
     if(v != null && v != undefined && v != "" && ( typeof v == 'boolean' || typeof v == 'string' || typeof v == 'symbol' || typeof v == 'number' || typeof v == 'function' || (typeof v == 'object'  && ((Array.isArray(v) && v.length) || (Array.isArray(v) != true)) ) ) ) { 
@@ -88,5 +92,50 @@ async function loopThroughSearchResults(){
   console.log(contain_arr)
 
 }
+
+async function searchExpertiseFacet(keyword,type){
+  var res = await fetch(`https://t1xpljqyri-dsn.algolia.net/1/indexes/people_joined_recently/facets/${type}/query?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.0%3Breact-instantsearch%205.3.2%3BJS%20Helper%202.26.1&x-algolia-application-id=T1XPLJQYRI&x-algolia-api-key=aad3f891232f12e59187e9962e07493e`, {
+  "headers": {
+    "accept": "application/json",
+    "accept-language": "en-US,en;q=0.9",
+    "content-type": "application/x-www-form-urlencoded",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site"
+  },
+  "referrer": window.location.href,
+  "referrerPolicy": "no-referrer-when-downgrade",
+  "body": `{\"params\":\"query=&hitsPerPage=100&maxValuesPerFacet=100&page=0&attributesToRetrieve=%5B%22*%22%5D&attributesToHighlight=%5B%5D&highlightPreTag=%3Cais-highlight-0000000000%3E&highlightPostTag=%3C%2Fais-highlight-0000000000%3E&facets=%5B%22Expertise%22%2C%22Certifications%22%2C%22Company%22%2C%22Industry%22%2C%22title%22%5D&tagFilters=&facetQuery=${keyword}&maxFacetHits=100\"}"`,
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "omit"
+});
+  var d = await res.json();
+  return d?.facetHits ? d?.facetHits?.map(r=> r ? {value: `${type}:${r.value}`, count: r.count} : {}) : [];
+}
+
+async function loopThroughPossibleExpertiseSearches(){
+  let abc = 'abcdefghhijklmnopqrstuvwxyz'.split('');
+  var facets = ['Expertise','Certifications','Industry','Company','title'];
+  let contained = [];
+  for(let i=0; i<abc.length; i++){
+    for(let f=0; f<facets.length; f++){
+      let search = await searchExpertiseFacet(abc[i],facets[f]);
+      search.forEach(r=> {
+        if(contained.every(itm=> itm.value != r.value)) contained.push(r)
+      });
+    }
+    await delay(rando(1122)+22);
+  }
+  return contained;
+}
+
+async function loopThroughAllPossibleSearches(){
+  var all_searchs = await loopThroughPossibleExpertiseSearches();
+  console.log( all_searchs);
+
+//TODO: rebuild the search function, condition for count==if<1000?nosort
+}
+// loopThroughAllPossibleSearches()
 
 loopThroughSearchResults()
