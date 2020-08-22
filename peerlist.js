@@ -27,18 +27,12 @@ function translateFacets(s){
   }
 }
 
-
-//https://www.peerlyst.com/search/users?trk=search_page_entity_types&query=%22Threat%20Intelligence%22&refinementList=%7B%22Expertise%22%3A%5B%22threat%20intelligence%22%5D%7D&page=1&sortBy=people_joined_recently
-
 async function getSearchResults(page,sort){ //
   var { query, refinementList, trk} = parseURIasJSON(window.location.href,{});
   let app_id = __meteor_runtime_config__?.PUBLIC_SETTINGS?.algolia?.appId;
   let api_key = __meteor_runtime_config__?.PUBLIC_SETTINGS?.algolia?.searchApiKey;
-// page: "1"
-// query: "%22Threat%20Intelligence%22"
-// refinementList: "%7B%22Expertise%22%3A%5B%22threat%20intelligence%22%5D%7D"
-// sortBy: "people_joined_recently"
-// trk: "search_page_entity_types"
+  let search_terms = refinementList ? {...(query ? {keywords: query} : {}),...JSON.parse(decodeURIComponent(refinementList))} : {};
+console.log(search_terms);
   var res = await fetch(`https://t1xpljqyri-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.0%3Breact-instantsearch%205.3.2%3BJS%20Helper%202.26.1&x-algolia-application-id=${app_id}&x-algolia-api-key=${api_key}`, {
   "headers": {
     "accept": "application/json",
@@ -57,14 +51,14 @@ async function getSearchResults(page,sort){ //
 });
   var d = await res.json();
 console.log(d);  
-  var parsed = parseSearchResults(d);
+  var parsed = parseSearchResults(d,search_terms);
 console.log(parsed);
   return parsed;
 }
 
-function parseSearchResults(obj){
+function parseSearchResults(obj,search_terms){
   return obj?.results && obj?.results[0] && obj?.results[0].hits?.map(r=> {
-    return cleanObject({
+    return cleanObject({...search_terms,...{
       img: r?.avatar?.cr?.publicId ? 'https://res.cloudinary.com/peerlyst/image/upload/c_limit,dpr_auto,f_auto,fl_lossy,h_65,q_auto,w_65/v1580476024/'+ r?.avatar?.cr?.publicId : null,
       company_name: r?.company?.displayName,
       company_id: r?.company?._id,
@@ -75,7 +69,7 @@ function parseSearchResults(obj){
       public_id: r?.slug,
       title: r?.title,
       tags: r?.topTags?.map(t=> t?.tag?.name),
-    })
+    }})
   })
 }
 
