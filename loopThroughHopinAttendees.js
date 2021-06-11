@@ -57,41 +57,45 @@ function convert2TsvAndDownload(records, named_file){
   downloadr(output_, named_file);
 }
 
-
-async function getAttendees(i){
-  var res = await fetch("https://hopin.to/api/v2/events/62244/users?page="+i, {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJjY2ZmNmQ1NS0xMGZjLTQ5YmMtYTBhMS0wZDE5YjFiODc1NjciLCJzdWIiOjE4NzUzMTMsInBlcnNvbmFfaWQiOjE3MTU3NywicmVnaXN0cmF0aW9uX2lkIjoyMzQ0OTM3LCJldmVudF9pZCI6NjIyNDQsInJvbGUiOiJhdHRlbmRlZSJ9.QcfuYcwlM38eJXEnaDzcmVCYLhi5Gr4hRiyDGwWoFeI",
-    "content-type": "application/json",
-    "if-none-match": "W/\"12ced1d0e2a2eea55b109064b32fdbab\"",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-site"
-  },
-  "referrer": "https://app.hopin.to/events/sourcecon-digital-2-0/reception",
-  "referrerPolicy": "no-referrer-when-downgrade",
-  "body": null,
-  "method": "GET",
-  "mode": "cors",
-  "credentials": "include"
-});
+// "z0jKfCmz0bnv1Cii5kWrw1yE0
+async function getAttendees(next){
+  var res = await fetch(`https://hopin.com/api/v2/events/170497/users/paginated?${next}`, {
+      "headers": {
+        "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxNmQxYjdmYy00NGQwLTRkMzUtYWIyZC01ZDUzYTUyOThkZWYiLCJzdWIiOjMwNTcyNTIsInBlcnNvbmFfaWQiOjU0MDAwNywicmVnaXN0cmF0aW9uX2lkIjo5MzIyNTM5LCJldmVudF9pZCI6MTcwNDk3LCJyb2xlIjoiYXR0ZW5kZWUiLCJtdWx0aXBsZV9jb25uIjp0cnVlLCJkYXRhX3NlZ3JlZ2F0ZWQiOmZhbHNlfQ.etTvLrrIrYsYCr-4nOIRfBLQyHRXCjOx6nPH9QFl6Lk",
+        "content-type": "application/json",
+        "sec-ch-ua": "\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"91\", \"Chromium\";v=\"91\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site"
+      },
+      "referrer": "https://app.hopin.com/",
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "body": null,
+      "method": "GET",
+      "mode": "cors",
+      "credentials": "include"
+    });
   var d = await res.json();
-  console.log(d);
   return d;
 }
 async function loopThroughAttendees(){
   const contain_arr = [];
-  for(let i=0; i<1000; i++){
-    var attendees = await getAttendees(i);
+  var next = ''
+  for(let i=0; i<5000; i++){ //1000
+    var attendees = await getAttendees(next);
+    next = `page[after]=${attendees?.meta?.page?.cursor}`;
     if(attendees?.users)contain_arr.push(attendees?.users);
-    await delay(rando(1111)+1000);
-    if(attendees?.users.length < 10) break;
+    await delay(rando(2111)+1000);
+    if(attendees?.users.length < 1) break;
+    if(!attendees?.meta?.page?.cursor) break;
   }
   console.log(contain_arr.flat());
   var cleaned = cleanObjectsInArray(contain_arr.flat());
-  convert2TsvAndDownload(cleaned,'sourcon_digital_attendees.tsv');
+  console.log(cleaned);
+  convert2TsvAndDownload(cleaned,'hopin_attendees.tsv');
 }
 function cleanObjectsInArray(arr){
   const tsvReady = (s) => s?.replace(/\t|\u0009|&#9;/g, ' ').replace(/[\r\n]+/g, '↵').replace(/\u2029|\u2028|\x85|\x1e|\x1d|\x1c|\x0c|\x0b/g,'↵').replace(/"/g, "'");
