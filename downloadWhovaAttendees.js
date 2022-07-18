@@ -135,7 +135,7 @@ async function loopThroughAttendees(){
     const page1 = await getAttendees(1);
     const contain_arr = [parseAttendeesResponse(page1)];
 
-    for(let i=0; i<page1?.result?.num_pages; i++){
+    for(let i=1; i<page1?.result?.num_pages; i++){ /* i=1, starting from one instead of zero as the page ordering has changed. Issue identified by Aaron Lintz and fixed by Bret Feig */
         let res = await getAttendees(i)
         contain_arr.push(parseAttendeesResponse(res));
         await delay(2000+rando(2000)) //avoid spamming servers 2-4 seconds for each page
