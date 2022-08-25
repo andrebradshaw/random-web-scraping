@@ -18,21 +18,29 @@ async function extractPageData(){
             await delay(1111);
             if(document.getElementsByClassName('item-loading')[0]) document.getElementsByClassName('item-loading')[0].scrollIntoView({behavior: "smooth",block: "end",inline: "end"});
         }
-        return total_posts == Object.entries(window.__INITIAL_STATE__?.pageData?.dataList)?.[0]?.[1]?.length;
+        console.log(/\bno more\b|没有更多了/i.exec(document.body.innerText)?.[0]);
+        console.log(Array.from(document.querySelectorAll('div')).filter(r=> /没有更多了|\bno more\b/i.test(r.innerText)));
+        return Object.entries(window.__INITIAL_STATE__?.pageData?.dataList).some(kv=> kv[1].length > total_posts);
+        /* total_posts == Object.entries(window.__INITIAL_STATE__?.pageData?.dataList)?.[0]?.[1]?.length; */
     }
     for(let i=0; i<1000; i++){
         let res = await scrollLoop();
         if(res) break;
+        if(Array.from(document.querySelectorAll('div')).filter(r=> /没有更多了|\bno more\b/i.test(r.innerText))?.length) break;        
     }
-    return Object.entries(window.__INITIAL_STATE__?.pageData?.dataList)?.[0]?.[1]?.map(r=> {
-        let obj = snakeCaseObject(r);
-        let content = snakeCaseObject(obj.content);
-        delete obj.content;
-        return {
-            ...obj,
-            ...content,
-        }
-    });
+    function unqKey(array,key){  var q = [];  var map = new Map();  for (const item of array) {    if(!map.has(item[key])){        map.set(item[key], true);        q.push(item);    }  }  return q;}
+    
+    return unqKey(Object.entries(window.__INITIAL_STATE__?.pageData?.dataList)?.map(kv=> {
+        return kv[1]?.map(r=> {
+          let obj = snakeCaseObject(r);
+          let content = snakeCaseObject(obj.content);
+          delete obj.content;
+          return {
+              ...obj,
+              ...content,
+          }
+      })
+    }).flat(),'content_id')
 }
 
 
@@ -220,6 +228,3 @@ async function handleFetch(url,params_obj,type){
     convert2TsvAndDownload(enriched_posts,`${/(?<=\/).+?(?=\?)/.exec(window.location.href)?.[0]} enriched posts.tsv`);
   }
   loopThroughPages()
-
-
-
